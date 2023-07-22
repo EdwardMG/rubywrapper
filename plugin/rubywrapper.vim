@@ -12,26 +12,21 @@ module RubyWrapperUtil
 
   def lit(s) = Literal.new(s)
 
-  # can't support these nested values unless I want to write my own to_json,
-  # which I don't :-)
   def recur_to_vim v, count=0
     raise if count > 1000
     if v.is_a? Hash
       count+=1
       v.transform_values {|v| recur_to_vim v, count }
     elsif v.is_a? TrueClass
-      raise "true not supported in nested hashses, use 1 instead" if count > 1
       "v:true"
     elsif v.is_a? FalseClass
-      raise "false not supported in nested hashses, use 0 instead" if count > 1
       "v:false"
     elsif v.is_a? NilClass
-      raise "nil not supported in nested hashses" if count > 1
       "v:null"
     elsif v.is_a? Array
       v.map {|e| recur_to_vim e, count}
     elsif v.is_a? Literal
-      raise "Literals not supported in nested hashses" if count > 1
+      raise "Literals not supported in hashses"
       v.val
     else
       v
@@ -44,6 +39,9 @@ module RubyWrapperUtil
     elsif v.is_a? Hash
       v = recur_to_vim v
       v.to_json
+        .gsub(/"v:true"/, " v:true")
+        .gsub(/"v:false"/, " v:false")
+        .gsub(/"v:null"/, " v:null")
     elsif v.is_a? TrueClass
       "v:true"
     elsif v.is_a? FalseClass
