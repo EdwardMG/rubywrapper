@@ -8,6 +8,8 @@ module RubyWrapperUtil
   class Literal
     attr_accessor :val
     def initialize(val) = @val = val
+
+    def inspect = "--LITERAL--#{val}--LITERAL--"
   end
 
   def lit(s) = Literal.new(s)
@@ -26,8 +28,7 @@ module RubyWrapperUtil
     elsif v.is_a? Array
       v.map {|e| recur_to_vim e, count}
     elsif v.is_a? Literal
-      raise "Literals not supported in hashses"
-      v.val
+      v.inspect
     else
       v
     end
@@ -42,6 +43,8 @@ module RubyWrapperUtil
         .gsub(/"v:true"/, " v:true")
         .gsub(/"v:false"/, " v:false")
         .gsub(/"v:null"/, " v:null")
+        .gsub(/"--LITERAL--/, "")
+        .gsub(/--LITERAL--"/, "")
     elsif v.is_a? TrueClass
       "v:true"
     elsif v.is_a? FalseClass
