@@ -20,11 +20,11 @@ module RubyWrapperUtil
       count+=1
       v.transform_values {|v| recur_to_vim v, count }
     elsif v.is_a? TrueClass
-      "v:true"
+      "--LITERAL_TRUE--"
     elsif v.is_a? FalseClass
-      "v:false"
+      "--LITERAL_FALSE--"
     elsif v.is_a? NilClass
-      "v:null"
+      "--LITERAL_NULL--"
     elsif v.is_a? Array
       v.map {|e| recur_to_vim e, count}
     elsif v.is_a? Literal
@@ -40,9 +40,9 @@ module RubyWrapperUtil
     elsif v.is_a? Hash
       v = recur_to_vim v
       v.to_json
-        .gsub(/"v:true"/, " v:true")
-        .gsub(/"v:false"/, " v:false")
-        .gsub(/"v:null"/, " v:null")
+        .gsub(/"--LITERAL_TRUE--"/, " v:true")
+        .gsub(/"--LITERAL_FALSE--"/, " v:false")
+        .gsub(/"--LITERAL_NULL--"/, " v:null")
         .gsub(/"--LITERAL--/, "")
         .gsub(/--LITERAL--"/, "")
     elsif v.is_a? TrueClass
