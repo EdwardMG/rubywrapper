@@ -34,7 +34,11 @@ module RubyWrapperUtil
     end
   end
 
-  def to_vim v, recurring=false
+  # this whole stupid thing should just be replaced with rubyeval (a vimscript
+  # function that parses strings of ruby data), except that we lose some
+  # flexibility with Literal, which allows a ruby string in the shape of a vim
+  # lambda to be allowed through. but that likely will never be useful
+  def to_vim v
     if v.is_a? String
       quote v
     elsif v.is_a? Hash
