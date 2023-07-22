@@ -1,6 +1,4 @@
-vim9script
-
-def Setup()
+fu! s:setup()
 ruby << EOF
 module Ev
   require 'json'
@@ -36,19 +34,7 @@ module Ex
   def self.method_missing(method, *args, &block) = Vim.command "#{method} #{args.join(' ')}"
 end
 EOF
-enddef
+endfu
 
-Setup()
+call s:setup()
 
-# if for some ungodly reason you needed to use vim lambdas, eg calling a vimscript utility function
-# echo map([1,2,3], { i, v -> v*2})
-# nno <silent><nowait> ,d :ruby puts Ev.map([1,2,3], Ev.lit('{ i, v -> v*2}')).inspect<CR>
-
-# other examples of Evaluate
-# nno <silent><nowait> ,d :ruby puts Ev.getline(1, 10)<CR>
-# nno <silent><nowait> ,d :ruby puts Ev.getpos("'<").inspect<CR>
-# nno <silent><nowait> ,d :ruby Ev.input("Hello? ")<CR>
-
-# Examples of Ex commands. You would only ever pass a single string
-# nno <silent><nowait> ,d :ruby Ex.edit("Hello.txt")<CR>
-# nno <silent><nowait> ,d :ruby Ex.write<CR>
