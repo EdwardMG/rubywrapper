@@ -25,7 +25,7 @@ module Filterable
     end
 
     def method_missing(method, *args, &block)
-      if Array.instance_method method
+      if Array.respond_to? method
         to_a.send(method, *args, &block)
       else
         super(method, *args, &block)
@@ -122,11 +122,28 @@ module Filterable
       predicate = clause_groups.last.last
       clause_groups.last[-1] = -> (row) { !predicate.call(row) }
     end
+
+    def in_buffer
+      if klass.method_defined? :bnum
+        where(bnum: $curbuf.number)
+      else
+        raise "#{klass} does not support bnum"
+      end
+    end
   end
 
   def self.included(includer_klass) = includer_klass.extend ClassMethods
 
   module ClassMethods
+
+    def in_buffer
+      if method :bnum
+        where(bnum: $curbuf.number)
+      else
+        raise "#{klass} does not support bnum"
+      end
+    end
+
     def ranges(*rs)
       Relation.new klass: self, ranges: rs
     end
@@ -563,6 +580,10 @@ end
 # Line.like(val: "SOMETHINGTOREPLACE").to_a.each {|l| l.gsub(/SOMETHINGTOREPLACE/, "ohhh") }
 
 # Line.like(val: "SOMETHINGTOREPLACE").each &:downcase
+
+# Line.like(val: "SOMETHINGTOREPLACE").in_buffer.to_a
+
+# Line.in_buffer.to_a
 
 #
 # }}}
