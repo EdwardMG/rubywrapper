@@ -15,11 +15,10 @@ require 'logger'
 # it's just smart to do this while developing, too painful to try to add puts
 # calls after the fact
 $rwlogger = Logger.new('rubywrapper.log')
-$rwlogger.level = Logger::WARN
+# $rwlogger.level = Logger::WARN
 $rwlogger.info 'start log'
 
 module Filterable
-
   class Relation
     attr_accessor :klass, :clause_groups, :clause_cursor, :_ranges, :all_rows, :pred_mem
 
@@ -36,7 +35,7 @@ module Filterable
 
     def method_missing(method, *args, &block)
       $rwlogger.debug "Relation instance method missing #{method}"
-      if Array.respond_to? method
+      if Array.method_defined? method
         to_a.send(method, *args, &block)
       else
         super(method, *args, &block)
@@ -148,7 +147,7 @@ module Filterable
   module ClassMethods
 
     def in_buffer
-      if method :bnum
+      if method_defined? :bnum
         where(bnum: $curbuf.number)
       else
         raise "#{klass} does not support bnum"
@@ -544,8 +543,6 @@ class Selection
 
   def method_missing(method, *args, &block)
     $rwlogger.debug "Selection instance method missing #{method}, attempting to forward to String"
-    # method_defined? to check for instance methods, respond_to? (on a class)
-    # would check class methods
     if String.method_defined? method
       $rwlogger.debug "Val: #{val.inspect}"
       r = val.map {|str| str.send(method, *args, &block) }
@@ -629,6 +626,31 @@ end
 # this will loop through the lines of the selection and call the string method
 # on each line. It will appropriately work on partial line selection
 # Selection.current.upcase
+
+# Examplea blah
+# EXAMPLEA OH
+# EXAMPLEA BLUE
+# EXAMPLEA WOW
+
+# Line.
+#   in_buffer.
+#   like(val: 'Examplea').
+#   not.like(val: 'val:').
+#   not.like(val: 'blah').
+#   each &:upcase
+# [
+#   Line(bnum: 1 lnum: 631 # EXAMPLEA OH,
+#   Line(bnum: 1 lnum: 632 # EXAMPLEA BLUE,
+#   Line(bnum: 1 lnum: 633 # EXAMPLEA WOW,
+# ]
+
+
+# begin
+# rescue => e
+#   # puts e.methods.inspect
+#   puts e.backtrace
+# end
+
 
 #
 # }}}
