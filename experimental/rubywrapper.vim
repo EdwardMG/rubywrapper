@@ -1,3 +1,4 @@
+" Preamble: {{{
 vim9script
 
 # The below shows some work to create an object oriented view of the running
@@ -8,14 +9,46 @@ vim9script
 def Setup()
 ruby << EOF
 
+require 'pp'
+
+# }}}
+# Filterable: {{{
 module Filterable
   def where(hash)
     all.select do |m|
       hash.map {|k, v| m.send(k) == v}.all? true
     end
   end
-end
 
+  def like(hash)
+    all.select do |m|
+      hash.map {|k, v| m.send(k).to_s.match? v}.all? true
+    end
+  end
+end
+# }}}
+# Examples: {{{
+
+# Line.like(val: /focus/)
+# [
+#   Line(bnum: 1 lnum: 31 Line.like(val: /focus/),
+#   Line(bnum: 1 lnum: 33 # "Line(bnum: 1 lnum: 25 Line.like(val: /focus/).pretty_inspect",
+#   Line(bnum: 1 lnum: 34 # "Line(bnum: 1 lnum: 67   def focus",
+#   Line(bnum: 1 lnum: 35 # "Line(bnum: 1 lnum: 113   def focus",
+#   Line(bnum: 1 lnum: 36 # "Line(bnum: 1 lnum: 129 # Buffer.all.first.lines[20].focus",
+#   Line(bnum: 1 lnum: 37 # "Line(bnum: 1 lnum: 162   def focus = Ex.buffer bnum",
+#   Line(bnum: 1 lnum: 38 # "Line(bnum: 1 lnum: 212   def focus",
+#   Line(bnum: 1 lnum: 39 # "Line(bnum: 1 lnum: 213     left.focus",
+#   Line(bnum: 1 lnum: 86   def focus,
+#   Line(bnum: 1 lnum: 134   def focus,
+#   Line(bnum: 1 lnum: 152 # Buffer.all.first.lines[20].focus,
+#   Line(bnum: 1 lnum: 187   def focus = Ex.buffer bnum,
+#   Line(bnum: 1 lnum: 239   def focus,
+#   Line(bnum: 1 lnum: 240     left.focus,
+# ]
+
+# }}}
+# Mapping: {{{
 class Mapping
   include Filterable
   extend Filterable
@@ -44,7 +77,8 @@ class Mapping
     @scriptversion = data["scriptversion"]
   end
 end
-
+# }}}
+# Position: {{{
 class Position
   attr_accessor :file, :lnum, :cnum, :screenoff, :bnum
 
@@ -72,7 +106,15 @@ class Position
     end
   end
 end
-
+# }}}
+# Array: {{{
+class Array
+  def pretty_inspect
+    map {|x| x.inspect }
+  end
+end
+# }}}
+# Line: {{{
 class Line
   include Filterable
   extend Filterable
@@ -111,6 +153,8 @@ class Line
     )
   end
 end
+# }}}
+# Examples: {{{
 
 # Buffer.all.first.lines[20].focus
 
@@ -135,6 +179,8 @@ end
 # Ev.getbufline(1, 1)
 # ["fu! s:setup()"]
 
+# }}}
+# Buffer: {{{
 class Buffer
   include Filterable
   extend Filterable
@@ -169,7 +215,8 @@ class Buffer
     @linecount   = data["linecount"]
   end
 end
-
+# }}}
+# Examples: {{{
 # # valid but a little jank
 # def visual_selection
 #   tmp = Var['@a']
@@ -178,7 +225,8 @@ end
 #   Var['@a'] = tmp
 #   r.force_encoding 'utf-8'
 # end
-
+# }}}
+# Selection: {{{
 class Selection
   attr_accessor :bnum, :left, :right
 
@@ -244,7 +292,50 @@ class Selection
   end
 
   def append_ruby_eval
-    $curbuf.append right.lnum, "# " + ruby_eval.inspect
+    # puts ruby_eval.length.inspect
+      # if i >= v.length
+      #   $curbuf.append left.lnum+i-1, ""
+      # end
+    # r = ruby_eval
+    # if r.is_a?(Array) && r.length > 1
+
+    #   i = 0
+    #   $curbuf.append right.lnum, "# ["
+
+    #   r.each do |line|
+    #     i+=1
+    #     $curbuf.append right.lnum+i+1, "#   " + line.inspect + ","
+    #   end
+
+    #   $curbuf.append right.lnum+i+1, "# ]"
+
+    # else
+    # end
+    r = ruby_eval
+    if r.inspect.length > 80
+      if r.is_a? Array
+        i = 0
+
+        $curbuf.append right.lnum+i, "# ["
+        i += 1
+
+        r.each do |item|
+          item.inspect.chars.each_slice(100) do |line|
+            $curbuf.append right.lnum+i, "#   " + line.join('') + ","
+            i += 1
+          end
+        end
+
+        $curbuf.append right.lnum+i, "# ]"
+
+      else
+        r.inspect.chars.each_slice(100).with_index do |line, i|
+          $curbuf.append right.lnum+i, "# " + line.join('')
+        end
+      end
+    else
+      $curbuf.append right.lnum, "# " + r.inspect
+    end
   end
 
   def val=(o)
@@ -271,6 +362,8 @@ class Selection
     end
   end
 end
+# }}}
+# Examples: {{{
 
 # Selection.current.val=["hello"]
 
@@ -314,12 +407,16 @@ end
 # # 798
 # Mapping.where(mode: 'x').length
 # # 73
-
+# }}}
+# Finish: {{{
 EOF
 enddef
 
 Setup()
 
+# }}}
+# remaps: {{{
 # vno gm :<C-u>ruby run_in_ruby<CR>
 vno gm :<C-u>ruby Selection.current.append_ruby_eval<CR>
 
+# }}}
