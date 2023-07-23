@@ -302,6 +302,8 @@ class Line
     end
   end
 
+  def self.current = new bnum: $curbuf.number, lnum: $curbuf.line_number
+
   def initialize bnum:, lnum:
     @bnum = bnum
     @lnum = lnum
@@ -584,6 +586,18 @@ end
 # Line.like(val: "SOMETHINGTOREPLACE").in_buffer.to_a
 
 # Line.in_buffer.to_a
+
+# this Line.current somewhat suggests that TextObjects would make nice
+# primitives, eg:
+# - Paragraph
+# - Indent
+# - Block
+# - Arguments
+# - Quotes
+# most of which could have a `next` method
+# however, there are so many possibilities that it's likely better left as an
+# excercise the reader
+# Line.current.upcase
 
 #
 # }}}
