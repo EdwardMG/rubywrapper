@@ -4,6 +4,12 @@ vim9script
 # Vim environment, making it trivial to query and modify values
 #
 # It's all subject to change / being abandoned but seems cool so far
+#
+# # TODO:
+# - This is probably sophisticated and big enough now to break into separate
+#   files, with one core file require everything. Have to be careful how I do
+#   that, such that it is still pleasant to source and doesn't hardcode any
+#   paths
 
 def Setup()
 ruby << EOF
