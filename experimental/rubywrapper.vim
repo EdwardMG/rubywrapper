@@ -24,6 +24,14 @@ module Filterable
       @pred_mem = pred_mem
     end
 
+    def method_missing(method, *args, &block)
+      if Array.instance_method method
+        to_a.send(method, *args, &block)
+      else
+        super(method, *args, &block)
+      end
+    end
+
     def to_a
       rows = []
       if _ranges.length > 0
@@ -76,6 +84,13 @@ module Filterable
 
       if self.pred_mem == :not
         negate_last_predicate
+        # it's funny how rarely this comes up in ruby, but setters called
+        # WITHIN a class MUST use self. This behaviour does not mirror
+        # getters. I wonder why this was necessary. I guess if this were not
+        # the case, then you could accidentally set an instance variable when
+        # you meant to create an local one, and this confusing behaviour was
+        # simply the lesser of two evils without wanting to require self. for
+        # all getters
         self.pred_mem = nil
       end
       self
@@ -520,12 +535,9 @@ end
 
 # Mapping.all.map(&:mode).uniq
 # # ["i", "c", "!", "v", "n", "o", "x", "t", " ", "s"]
-# Mapping.where(mode: 'i').length
-# # 142
+# Mapping.where(mode: 'i').first(2)
 # Mapping.where(mode: 'n').length
-# # 798
 # Mapping.where(mode: 'x').length
-# # 73
 # }}}
 # Finish: {{{
 EOF
