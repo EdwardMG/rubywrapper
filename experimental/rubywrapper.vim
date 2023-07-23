@@ -8,9 +8,6 @@ vim9script
 
 def Setup()
 ruby << EOF
-
-require 'pp'
-
 # }}}
 # Filterable: {{{
 module Filterable
@@ -292,25 +289,6 @@ class Selection
   end
 
   def append_ruby_eval
-    # puts ruby_eval.length.inspect
-      # if i >= v.length
-      #   $curbuf.append left.lnum+i-1, ""
-      # end
-    # r = ruby_eval
-    # if r.is_a?(Array) && r.length > 1
-
-    #   i = 0
-    #   $curbuf.append right.lnum, "# ["
-
-    #   r.each do |line|
-    #     i+=1
-    #     $curbuf.append right.lnum+i+1, "#   " + line.inspect + ","
-    #   end
-
-    #   $curbuf.append right.lnum+i+1, "# ]"
-
-    # else
-    # end
     r = ruby_eval
     if r.inspect.length > 80
       if r.is_a? Array
