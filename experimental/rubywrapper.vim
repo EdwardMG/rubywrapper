@@ -328,6 +328,20 @@ class Line
     @val = Ev.getbufline(bnum, lnum).first
   end
 
+  def position_at i
+    # feels bad, maybe better to change the return value of getcharpos
+    # so I can use 0 index everywhere
+    Position.new(lnum: lnum, cnum: i+1, bnum: bnum)
+  end
+
+  def new_selection starti, endi
+    Selection.new(
+      bnum: bnum,
+      left: position_at(starti),
+      right:position_at(endi)
+    )
+  end
+
   def focus
     Ex.buffer bnum
     Ev.cursor lnum, 1
@@ -680,6 +694,14 @@ end
 # Buffer.current.append(
 #   Net::HTTP.get(URI("https://ruby-doc.org/stdlib-2.7.0/libdoc/net/http/rdoc/Net/HTTP.html")).split("\n")
 # )
+
+# appendme
+
+# Line.in_buffer[697].new_selection 2, 4
+# Selection(bnum: 1, lnum: 698, val: ["app"])
+# Line.in_buffer[697].new_selection(2, 4).prepend "wow"
+# Line.in_buffer[697].new_selection(2, 4).concat "elachian"
+
 
 #
 # }}}
