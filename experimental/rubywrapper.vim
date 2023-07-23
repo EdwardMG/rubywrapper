@@ -60,7 +60,10 @@ class Position
   def self.visual_end_pos = getcharpos "'>"
 
   def self.getcharpos expr
-    Ev.getcharpos(expr).yield_self {|pos| new bnum: pos[0], lnum: pos[1], cnum: pos[2], screenoff: pos[3] }
+    Ev.getcharpos(expr).yield_self do |pos|
+      bnum = pos[0] == 0 ? $curbuf.number : pos[0]
+      new bnum: bnum, lnum: pos[1], cnum: pos[2], screenoff: pos[3]
+    end
   end
 end
 
@@ -70,6 +73,8 @@ class Line
 
   attr_accessor :bnum, :lnum
   attr_reader :val
+
+  def inspect = "Line(bnum: #{bnum} lnum: #{lnum} #{val}"
 
   def self.all
     Buffer.all.flat_map do |b|
@@ -168,37 +173,125 @@ end
 #   r.force_encoding 'utf-8'
 # end
 
-# "書く"
-# verbose and error prone
-def visual_selection
-  startp = Position.visual_start_pos
-  endp   = Position.visual_end_pos
-  Ev.getline(startp.lnum, endp.lnum).tap do |lines|
-    lines.map! {|l| l.force_encoding 'utf-8' } # or we'll have issues with multibyte
-    if lines.length > 1
-      lines[0] = lines[0][startp.cnum-1..-1]
-      lines[-1] = lines[-1][0..endp.cnum-1]
-      lines
-    elsif lines.length > 0
-      lines[0] = lines[0][startp.cnum-1..endp.cnum-1]
-      lines
-    else
-      lines
+class Selection
+  attr_accessor :bnum, :left, :right
+
+  def self.last
+    left = Position.visual_start_pos
+    new(bnum: left.bnum, left: left, right: Position.visual_end_pos)
+  end
+
+  def self.current = last
+
+  def initialize bnum:, left:, right:
+    @bnum = bnum
+    @left = left
+    @right = right
+  end
+
+  def inspect
+    "Selection(bnum: #{bnum}, lnum: #{left.lnum}, val: #{val})"
+  end
+
+  def lines
+    (left.lnum..right.lnum).map do |lnum|
+      Line.new(bnum: bnum, lnum: lnum)
+    end
+  end
+
+  def val
+    Ev.getline(left.lnum, right.lnum).tap do |lines|
+      lines.map! {|l| l.force_encoding 'utf-8' } # or we'll have issues with multibyte
+      if lines.length > 1
+        lines[0] = lines[0][left.cnum-1..-1]
+        lines[-1] = lines[-1][0..right.cnum-1]
+        lines
+      elsif lines.length > 0
+        lines[0] = lines[0][left.cnum-1..right.cnum-1]
+        lines
+      else
+        lines
+      end
+    end
+  end
+
+  def first_line = Ev.getline left.lnum
+  def last_line  = Ev.getline right.lnum
+
+  def ruby_eval
+    r = ""
+    val.each do |line|
+      if line.start_with? /\s*\./
+        r << line
+      else
+        r << "\n" << line
+      end
+    end
+    eval(r)
+  end
+
+  def append_ruby_eval
+    $curbuf.append right.lnum, "# " + ruby_eval.inspect
+  end
+
+  def val=(o)
+    v = val
+    char_prior = left.cnum > 1 ? left.cnum-2 : left.cnum-1
+    start_rem = first_line[0..char_prior]
+    end_rem = last_line[right.cnum..-1]
+    o.each_with_index do |replacement, i|
+      # in the case we have more input lines than selection lines, add blank
+      # lines
+      if i >= v.length
+        $curbuf.append left.lnum+i-1, ""
+      end
+
+      if i == 0 && i == o.length-1
+        Line.new(bnum: bnum, lnum: left.lnum+i).val = start_rem + replacement + end_rem
+      elsif i == 0
+        Line.new(bnum: bnum, lnum: left.lnum+i).val = start_rem + replacement
+      elsif i == o.length-1
+        Line.new(bnum: bnum, lnum: left.lnum+i).val = replacement + end_rem
+      else
+        Line.new(bnum: bnum, lnum: left.lnum+i).val = replacement
+      end
     end
   end
 end
 
-def run_in_ruby
-  r = ""
-  visual_selection.each do |line|
-    if line.start_with? /\s*\./
-      r << line
-    else
-      r << "\n" << line
-    end
-  end
-  $curbuf.append(Position.visual_end_pos.lnum, "# " + eval(r).inspect)
-end
+# Selection.current.val=["hello"]
+
+# # "書く"
+# # verbose and error prone
+# def visual_selection
+#   startp = Position.visual_start_pos
+#   endp   = Position.visual_end_pos
+#   Ev.getline(startp.lnum, endp.lnum).tap do |lines|
+#     lines.map! {|l| l.force_encoding 'utf-8' } # or we'll have issues with multibyte
+#     if lines.length > 1
+#       lines[0] = lines[0][startp.cnum-1..-1]
+#       lines[-1] = lines[-1][0..endp.cnum-1]
+#       lines
+#     elsif lines.length > 0
+#       lines[0] = lines[0][startp.cnum-1..endp.cnum-1]
+#       lines
+#     else
+#       lines
+#     end
+#   end
+# end
+
+# def run_in_ruby
+#   r = ""
+#   visual_selection.each do |line|
+#     if line.start_with? /\s*\./
+#       r << line
+#     else
+#       r << "\n" << line
+#     end
+#   end
+#   $curbuf.append(Position.visual_end_pos.lnum, "# " + eval(r).inspect)
+# end
 
 # Mapping.all.map(&:mode).uniq
 # # ["i", "c", "!", "v", "n", "o", "x", "t", " ", "s"]
@@ -214,5 +307,6 @@ enddef
 
 Setup()
 
-vno gm :<C-u>ruby run_in_ruby<CR>
+# vno gm :<C-u>ruby run_in_ruby<CR>
+vno gm :<C-u>ruby Selection.current.append_ruby_eval<CR>
 
