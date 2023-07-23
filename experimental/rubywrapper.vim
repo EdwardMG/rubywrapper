@@ -396,11 +396,19 @@ class Buffer
 
   def self.all = Ev.getbufinfo.map {|b| new b }
 
+  def self.current = Ev.getbufinfo($curbuf.number).first.yield_self {|b| new b }
+
   def focus = Ex.buffer bnum
 
   def lines
     (1..linecount).map do |lnum|
       Line.new bnum: bnum, lnum: lnum
+    end
+  end
+
+  def append ary_of_strings
+    ary_of_strings.each_with_index do |str, i|
+      $curbuf.append linecount+i, str
     end
   end
 
@@ -659,6 +667,10 @@ end
 #   puts e.backtrace
 # end
 
+# lol
+# Buffer.current.append(
+#   Net::HTTP.get(URI("https://ruby-doc.org/stdlib-2.7.0/libdoc/net/http/rdoc/Net/HTTP.html")).split("\n")
+# )
 
 #
 # }}}
