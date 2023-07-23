@@ -305,6 +305,11 @@ class Line
       val.gsub('"', '\"').gsub("'", "\'")
     )
   end
+
+  def gsub(*args)
+    r = val.gsub(*args)
+    self.val = r
+  end
 end
 # }}}
 # Examples: {{{
@@ -538,6 +543,17 @@ end
 # Mapping.where(mode: 'i').first(2)
 # Mapping.where(mode: 'n').length
 # Mapping.where(mode: 'x').length
+#
+# SOMETHINGTOREPLACE
+# SOMETHINGTOREPLACE
+# SOMETHINGTOREPLACE
+#
+
+# Line.like(val: "SOMETHINGTOREPLACE").to_a.first.gsub(/SOMETHINGTOREPLACE/, "ohhh")
+
+# Line.like(val: "SOMETHINGTOREPLACE").to_a.each {|l| l.gsub(/SOMETHINGTOREPLACE/, "ohhh") }
+
+#
 # }}}
 # Finish: {{{
 EOF
