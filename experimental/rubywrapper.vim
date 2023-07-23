@@ -33,6 +33,8 @@ module Filterable
       $rwlogger.debug self.inspect
     end
 
+    def inspect = "Filterable(klass: #{klass} pred_mem: #{pred_mem} clause_groups: #{clause_groups})"
+
     def method_missing(method, *args, &block)
       $rwlogger.debug "Relation instance method missing #{method}"
       if Array.method_defined? method
@@ -336,8 +338,8 @@ class Line
   end
 
   def method_missing(method, *args, &block)
-    $rwlogger.debug "Line instance method missing #{method}"
     if String.instance_method method
+      $rwlogger.debug "Line method #{method} forwarded to String"
       r = val.send(method, *args, &block)
       self.val = r
     else
