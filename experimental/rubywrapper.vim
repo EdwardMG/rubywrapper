@@ -535,8 +535,11 @@ class Selection
 
   def val=(o)
     v = val
-    char_prior = left.cnum > 1 ? left.cnum-2 : left.cnum-1
-    start_rem = first_line[0..char_prior]
+    start_rem = if left.cnum > 1
+                   first_line[0..left.cnum-2]
+                else left.cnum == 1
+                  ""
+                end
     end_rem = last_line[right.cnum..-1]
     o.each_with_index do |replacement, i|
       # in the case we have more input lines than selection lines, add blank
@@ -642,6 +645,12 @@ end
 # this will loop through the lines of the selection and call the string method
 # on each line. It will appropriately work on partial line selection
 # Selection.current.upcase
+
+# Selection.current.concat('oh')
+#  ohSelection.current.prepend('oh')
+# ["ohSelection.current.prepend('oh')"]
+
+# Selection.current.prepend('oh')
 
 # Examplea blah
 # EXAMPLEA OH
