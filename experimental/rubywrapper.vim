@@ -56,6 +56,12 @@ class Position
     @bnum = bnum
   end
 
+  def focus
+    Ex.buffer bnum
+    Ev.cursor lnum, cnum
+    Ex.normal! "zz"
+  end
+
   def self.visual_start_pos = getcharpos "'<"
   def self.visual_end_pos = getcharpos "'>"
 
@@ -187,6 +193,13 @@ class Selection
     @bnum = bnum
     @left = left
     @right = right
+  end
+
+  def focus
+    left.focus
+    Ex.buffer bnum
+    Ev.cursor left.lnum, left.cnum
+    Ex.normal! "zz"
   end
 
   def inspect
