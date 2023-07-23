@@ -1,6 +1,5 @@
 " Preamble: {{{
 vim9script
-
 # The below shows some work to create an object oriented view of the running
 # Vim environment, making it trivial to query and modify values
 #
@@ -10,6 +9,15 @@ def Setup()
 ruby << EOF
 # }}}
 # Filterable: {{{
+
+require 'logger'
+
+# it's just smart to do this while developing, too painful to try to add puts
+# calls after the fact
+$rwlogger = Logger.new('rubywrapper.log')
+$rwlogger.level = Logger::WARN
+$rwlogger.info 'start log'
+
 module Filterable
 
   class Relation
@@ -22,9 +30,12 @@ module Filterable
       @_ranges = ranges # need to differentiate the user facing ranges setter method from the data
       @all_rows = all_rows ? all_rows : klass.all
       @pred_mem = pred_mem
+      $rwlogger.debug 'initialize relation'
+      $rwlogger.debug self.inspect
     end
 
     def method_missing(method, *args, &block)
+      $rwlogger.debug "Relation instance method missing #{method}"
       if Array.respond_to? method
         to_a.send(method, *args, &block)
       else
@@ -326,6 +337,7 @@ class Line
   end
 
   def method_missing(method, *args, &block)
+    $rwlogger.debug "Line instance method missing #{method}"
     if String.instance_method method
       r = val.send(method, *args, &block)
       self.val = r
@@ -427,6 +439,7 @@ class Selection
     @bnum = bnum
     @left = left
     @right = right
+    $rwlogger.debug "init Selection #{self.inspect}"
   end
 
   def focus
@@ -528,6 +541,20 @@ class Selection
       end
     end
   end
+
+  def method_missing(method, *args, &block)
+    $rwlogger.debug "Selection instance method missing #{method}, attempting to forward to String"
+    # method_defined? to check for instance methods, respond_to? (on a class)
+    # would check class methods
+    if String.method_defined? method
+      $rwlogger.debug "Val: #{val.inspect}"
+      r = val.map {|str| str.send(method, *args, &block) }
+      self.val = r
+    else
+      $rwlogger.error "#{method} not defined on String"
+      super(method, *args, &block)
+    end
+  end
 end
 # }}}
 # Examples: {{{
@@ -598,6 +625,10 @@ end
 # however, there are so many possibilities that it's likely better left as an
 # excercise the reader
 # Line.current.upcase
+
+# this will loop through the lines of the selection and call the string method
+# on each line. It will appropriately work on partial line selection
+# Selection.current.upcase
 
 #
 # }}}
