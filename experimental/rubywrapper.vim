@@ -306,10 +306,19 @@ class Line
     )
   end
 
-  def gsub(*args)
-    r = val.gsub(*args)
-    self.val = r
+  def method_missing(method, *args, &block)
+    if String.instance_method method
+      r = val.send(method, *args, &block)
+      self.val = r
+    else
+      super(method, *args, &block)
+    end
   end
+
+  # def gsub(*args)
+  #   r = val.gsub(*args)
+  #   self.val = r
+  # end
 end
 # }}}
 # Examples: {{{
@@ -552,6 +561,8 @@ end
 # Line.like(val: "SOMETHINGTOREPLACE").to_a.first.gsub(/SOMETHINGTOREPLACE/, "ohhh")
 
 # Line.like(val: "SOMETHINGTOREPLACE").to_a.each {|l| l.gsub(/SOMETHINGTOREPLACE/, "ohhh") }
+
+# Line.like(val: "SOMETHINGTOREPLACE").each &:downcase
 
 #
 # }}}
