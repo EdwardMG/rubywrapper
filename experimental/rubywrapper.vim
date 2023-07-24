@@ -426,23 +426,36 @@ class Buffer
     b = blob
 
     i = 0
-    newline_indicies = []
+    # there is no newline at the start of the file, but
+    # for convenience of later calculations on the line number it
+    # is much easier to start with 0
+    newline_indicies = [0]
     while i = blob.index(/\n/, i+1)
       newline_indicies << i
     end
 
     blob.to_enum(:scan, regexp).map do
-      # puts Regexp.last_match[1]
-      pos = Regexp.last_match.offset(1)
-      left_lnum = newline_indicies.index {|nl_i| nl_i > pos[0] } + 1
-      right_lnum = newline_indicies.index {|nl_i| nl_i > pos[1] } + 1
+      last_match = Regexp.last_match
+      # we allow using the first capture group
+      # or using the whole match
+      pos = if last_match[1]
+              last_match.offset(1)
+            else
+              last_match.offset(0)
+            end
 
-      # too much guessing on this
-      left_cnum = pos[0] - newline_indicies[left_lnum-2]
+      # >= important for when the match beings or ends next to the new line
+      left_lnum = newline_indicies.index {|nl_i| nl_i >= pos[0] }
+      right_lnum = newline_indicies.index {|nl_i| nl_i >= pos[1] }
+
+      left_cnum = pos[0] - newline_indicies[left_lnum-1]
       left_cnum = left_cnum == 0 ? 1 : left_cnum
 
-      right_cnum = pos[1] - newline_indicies[right_lnum-2] - 1
-      right_cnum = right_cnum == 0 ? 1 : right_cnum
+      right_cnum = pos[1] - newline_indicies[right_lnum-1]
+
+      # right_cnum-1 accounts for the pos[1] being the charcter AFTER our match
+      # (which would be handy for people performing another search, not for us)
+      right_cnum = right_cnum == 0 ? 1 : right_cnum-1
 
       left  = Position.new(lnum: left_lnum,  cnum: left_cnum,  bnum: bnum)
       right = Position.new(lnum: right_lnum, cnum: right_cnum, bnum: bnum)
@@ -472,16 +485,6 @@ class Buffer
     @linecount   = data["linecount"]
   end
 end
-# }}}
-# Examples: {{{
-# # valid but a little jank
-# def visual_selection
-#   tmp = Var['@a']
-#   Ex.normal! 'gv"ay'
-#   r = Var['@a']
-#   Var['@a'] = tmp
-#   r.force_encoding 'utf-8'
-# end
 # }}}
 # Selection: {{{
 class Selection
@@ -735,6 +738,10 @@ end
 # this is pretty inefficient but at least for a single file was still pretty
 # much instant
 # Buffer.current.selections_for_match(/\n\s*(def) /).each {|s| s.gsub(/def/, "function") }
+
+# ruby puts Buffer.current.selections_for_match(/\n\s*(end)/).inspect
+# ruby puts Buffer.current.selections_for_match(/end/).inspect
+# ruby puts Buffer.current.selections_for_match(/\n\s*(def) /).inspect
 
 #
 # }}}
