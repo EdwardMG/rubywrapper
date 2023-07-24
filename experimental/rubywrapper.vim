@@ -420,6 +420,36 @@ class Buffer
     end
   end
 
+  def blob = File.read(name)
+
+  def selections_for_match regexp
+    b = blob
+
+    i = 0
+    newline_indicies = []
+    while i = blob.index(/\n/, i+1)
+      newline_indicies << i
+    end
+
+    blob.to_enum(:scan, regexp).map do
+      # puts Regexp.last_match[1]
+      pos = Regexp.last_match.offset(1)
+      left_lnum = newline_indicies.index {|nl_i| nl_i > pos[0] } + 1
+      right_lnum = newline_indicies.index {|nl_i| nl_i > pos[1] } + 1
+
+      # too much guessing on this
+      left_cnum = pos[0] - newline_indicies[left_lnum-2]
+      left_cnum = left_cnum == 0 ? 1 : left_cnum
+
+      right_cnum = pos[1] - newline_indicies[right_lnum-2] - 1
+      right_cnum = right_cnum == 0 ? 1 : right_cnum
+
+      left  = Position.new(lnum: left_lnum,  cnum: left_cnum,  bnum: bnum)
+      right = Position.new(lnum: right_lnum, cnum: right_cnum, bnum: bnum)
+      Selection.new(bnum: bnum, left: left, right:right)
+    end
+  end
+
   def append ary_of_strings
     ary_of_strings.each_with_index do |str, i|
       $curbuf.append linecount+i, str
@@ -702,6 +732,9 @@ end
 # Line.in_buffer[697].new_selection(2, 4).prepend "wow"
 # Line.in_buffer[697].new_selection(2, 4).concat "elachian"
 
+# this is pretty inefficient but at least for a single file was still pretty
+# much instant
+# Buffer.current.selections_for_match(/\n\s*(def) /).each {|s| s.gsub(/def/, "function") }
 
 #
 # }}}
