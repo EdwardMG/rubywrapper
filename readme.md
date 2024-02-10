@@ -12,9 +12,6 @@ A simple wrapper that provides `Ev` (evaluate) and `Ex` (Ex Command) modules
 which forward method calls to built-in vim functions. `Var` is also provided
 for accessing global variables, settings and registers.
 
-No promises you won't run into edgecases, but seems to handle simple cases in
-my experimenting.
-
 ### Ev examples
 
 `ruby puts Ev.getline(1, 10)`
@@ -107,6 +104,19 @@ a register
 
 a setting
 `ruby Var['&filetype']="blah"`
+
+## Escaping Single Quotes
+
+A helper is provided to make moving strings between ruby and vim less painful,
+as vim differs from ruby in how single quoted and double quoted strings are interpretted.
+
+``` ruby
+'Bob\'s string'.sq
+# "Bob''s string"
+```
+
+This is particularly useful when making use of vim's regular expressions, which
+have many useful features not available in ruby.
 
 ## Purpose
 

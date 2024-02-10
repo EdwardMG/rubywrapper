@@ -2,8 +2,20 @@ fu! s:setup()
 ruby << EOF
 require 'json'
 
+class String
+  # this monkey patch helps us create a string
+  # that will behave similarly to vim's single quote string
+  def sq
+    self.gsub!(/'/, '\'\'')
+    @sq = true
+    self
+  end
+
+  def single_quote? = !!@sq
+end
+
 module RubyWrapperUtil
-  def quote(s) = "\"#{s}\""
+  def quote(s) = s.single_quote? ? "'#{s}'" : "\"#{s}\""
 
   class Literal
     attr_accessor :val
