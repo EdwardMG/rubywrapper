@@ -12,6 +12,7 @@ class String
   end
 
   def single_quote? = !!@sq
+  def lit = RubyWrapperUtil::Literal.new(self)
 end
 
 module RubyWrapperUtil
