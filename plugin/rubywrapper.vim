@@ -112,6 +112,24 @@ module Var
     Vim.command "let #{val}=#{to_vim o}"
   end
 end
+
+module Global
+  include RubyWrapperUtil
+  extend RubyWrapperUtil
+
+  def self.method_missing(val, *args, &block)
+    if val[-1] == "="
+      Vim.command "let g:#{val}#{to_vim args.first}"
+    else
+      Vim.evaluate "g:#{val}"
+    end
+  end
+
+  def self.[](val) = Vim.evaluate "g:#{val}"
+  def self.[]=(val, o)
+    Vim.command "let g:#{val}=#{to_vim o}"
+  end
+end
 EOF
 endfu
 
