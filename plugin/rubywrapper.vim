@@ -130,8 +130,137 @@ module Global
     Vim.command "let g:#{val}=#{to_vim o}"
   end
 end
+
+class MotionSelection
+  attr_accessor :l, :r, :s, :e, :type
+  Position = Struct.new(:bnum, :lnum, :cnum, :offset) do
+    def cidx = cnum < 10000 ? cnum-1 : -1
+    def lidx = lnum - 1
+  end
+
+  def initialize type
+    @l = Position.new *Ev.getpos("'[")
+    @r = Position.new *Ev.getpos("']")
+    @type = type
+  end
+
+  def feed
+    yield self
+  end
+
+  def replace
+    outer.each.with_index do |line, i|
+      if type == "line"
+        line = yield line
+      else
+        line[l.cidx..r.cidx] = yield inner[i]
+      end
+      Ev.setline(l.lnum + i, line.sq)
+    end
+  end
+
+  def inner
+    if l.lnum == r.lnum
+      [ Ev.getline(l.lnum)[(l.cidx)..(r.cidx)] ]
+    else
+      lines = []
+      i = l.lnum + 1
+
+      if type == 'line'
+        lines << Ev.getline(i)
+      else
+        lines << Ev.getline(l.lnum)[(l.cidx)..-1]
+      end
+
+      while i <= r.lnum
+        if i == r.lnum
+          if type == 'line'
+            lines << Ev.getline(i)
+          else
+            lines << Ev.getline(i)[0..(r.cidx)]
+          end
+        else
+          lines << Ev.getline(i)
+        end
+        i += 1
+      end
+
+      lines
+    end
+  end
+  def outer = Ev.getline(l.lnum, r.lnum)
+  def lines = Ev.getline(l.lnum, r.lnum)
+end
+
+class VisualSelection
+  attr_accessor :l, :r, :s, :e, :type
+  Position = Struct.new(:bnum, :lnum, :cnum, :offset) do
+    def cidx = cnum < 10000 ? cnum-1 : -1
+    def lidx = lnum - 1
+  end
+
+  def initialize
+    @l = Position.new *Ev.getpos("'<")
+    @r = Position.new *Ev.getpos("'>")
+    @type =
+      case Ev.visualmode
+      when 'v'; 'char'
+      when 'V'; 'line'
+      when ''; 'block'
+      end
+  end
+
+  def feed
+    yield self
+  end
+
+  def replace
+   outer.each.with_index do |line, i|
+     if type == "line"
+       line = yield line
+     else
+        line[l.cidx..r.cidx] = yield inner[i]
+     end
+     Ev.setline(l.lnum + i, line.sq)
+   end
+  end
+
+  def inner
+    if l.lnum == r.lnum
+      [ Ev.getline(l.lnum)[(l.cidx)..(r.cidx)] ]
+    else
+      lines = []
+      i = l.lnum + 1
+
+      if type == 'line'
+        lines << Ev.getline(i)
+      else
+        lines << Ev.getline(l.lnum)[(l.cidx)..-1]
+      end
+
+      while i <= r.lnum
+        if i == r.lnum
+          if type == 'line'
+            lines << Ev.getline(i)
+          else
+            lines << Ev.getline(i)[0..(r.cidx)]
+          end
+        else
+          lines << Ev.getline(i)
+        end
+        i += 1
+      end
+
+      lines
+    end
+  end
+  def outer = Ev.getline(l.lnum, r.lnum)
+  def lines = Ev.getline(l.lnum, r.lnum)
+end
 EOF
 endfu
 
 call s:setup()
 
+" vno ,t :ruby VisualSelection.new.replace do; _1.split(' ').inspect ; end<CR>
+" nno ,t :<C-u>let &opfunc='{ t -> rubyeval("MotionSelection.new(Var[''t'']).replace { _1.split('' '').inspect }") }'<CR>g@
