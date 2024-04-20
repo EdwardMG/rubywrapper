@@ -1,5 +1,6 @@
 fu! s:setup()
 ruby << EOF
+$VERBOSE = nil
 require 'json'
 
 class String
@@ -131,7 +132,37 @@ module Global
   end
 end
 
-class MotionSelection
+def source_ruby! *files, version: '1', root:
+  target_path = root + "/#{version}.vim"
+
+  File.open(target_path, 'w') do |f|
+    f.puts "fu! s:Setup()"
+    f.puts "ruby << EOF"
+    files.uniq.each do |path|
+      p = path.start_with?('/') ? path : (root + '/' + path)
+      f.puts File.read(p)
+    end
+    f.puts "EOF"
+    f.puts "endfu"
+    f.puts "call s:Setup()"
+  end
+
+  # BUG: strangely I have to do this thought Vim.command
+  # Ex.source target_path
+  Vim.command "source " + target_path
+end
+
+def source_ruby *files, version:, root: nil
+  target_path = root + "/#{version}.vim"
+
+  if File.exist? target_path
+    source_ruby! *files, version: version, root: root
+  else
+    Vim.command "source " + target_path
+  end
+end
+
+class Selection
   attr_accessor :l, :r, :s, :e, :type
   Position = Struct.new(:bnum, :lnum, :cnum, :offset) do
     def cidx = cnum < 10000 ? cnum-1 : -1
@@ -139,9 +170,7 @@ class MotionSelection
   end
 
   def initialize type
-    @l = Position.new *Ev.getpos("'[")
-    @r = Position.new *Ev.getpos("']")
-    @type = type
+    raise 'use VisualSelection or MotionSelection instead'
   end
 
   def feed
@@ -156,6 +185,24 @@ class MotionSelection
         line[l.cidx..r.cidx] = yield inner[i]
       end
       Ev.setline(l.lnum + i, line.sq)
+    end
+  end
+
+  def replace_all
+    if type == "line"
+      result = yield outer.join(' ')
+      Ev.setline(l.lnum, result.sq)
+      i = r.lnum
+      while i > l.lnum && i > 0
+        Ev.deletebufline(Ev.bufname, i)
+        i -= 1
+      end
+    else
+      # fallback to normal replacement as replace all doesn't make sense
+      outer.each.with_index do |line, i|
+        line[l.cidx..r.cidx] = yield inner[i]
+        Ev.setline(l.lnum + i, line.sq)
+      end
     end
   end
 
@@ -192,13 +239,15 @@ class MotionSelection
   def lines = Ev.getline(l.lnum, r.lnum)
 end
 
-class VisualSelection
-  attr_accessor :l, :r, :s, :e, :type
-  Position = Struct.new(:bnum, :lnum, :cnum, :offset) do
-    def cidx = cnum < 10000 ? cnum-1 : -1
-    def lidx = lnum - 1
+class MotionSelection < Selection
+  def initialize type
+    @l = Position.new *Ev.getpos("'[")
+    @r = Position.new *Ev.getpos("']")
+    @type = type
   end
+end
 
+class VisualSelection < Selection
   def initialize
     @l = Position.new *Ev.getpos("'<")
     @r = Position.new *Ev.getpos("'>")
@@ -209,53 +258,6 @@ class VisualSelection
       when ''; 'block'
       end
   end
-
-  def feed
-    yield self
-  end
-
-  def replace
-   outer.each.with_index do |line, i|
-     if type == "line"
-       line = yield line
-     else
-        line[l.cidx..r.cidx] = yield inner[i]
-     end
-     Ev.setline(l.lnum + i, line.sq)
-   end
-  end
-
-  def inner
-    if l.lnum == r.lnum
-      [ Ev.getline(l.lnum)[(l.cidx)..(r.cidx)] ]
-    else
-      lines = []
-      i = l.lnum + 1
-
-      if type == 'line'
-        lines << Ev.getline(i)
-      else
-        lines << Ev.getline(l.lnum)[(l.cidx)..-1]
-      end
-
-      while i <= r.lnum
-        if i == r.lnum
-          if type == 'line'
-            lines << Ev.getline(i)
-          else
-            lines << Ev.getline(i)[0..(r.cidx)]
-          end
-        else
-          lines << Ev.getline(i)
-        end
-        i += 1
-      end
-
-      lines
-    end
-  end
-  def outer = Ev.getline(l.lnum, r.lnum)
-  def lines = Ev.getline(l.lnum, r.lnum)
 end
 EOF
 endfu
