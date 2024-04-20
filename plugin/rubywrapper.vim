@@ -16,6 +16,34 @@ class String
   def lit = RubyWrapperUtil::Literal.new(self)
 end
 
+class Array
+  def fzf
+    io = IO.popen('fzf -m', 'r+')
+    begin
+      stdout, $stdout = $stdout, io
+      each { puts _1 } rescue nil
+    ensure
+      $stdout = stdout
+    end
+    io.close_write
+    r = io.readlines.map(&:chomp)
+    Ex.redraw!
+    r
+  end
+
+  # sink is a string that when evaluated is a vim lambda
+  def fzf2 sink
+    Ev.send(
+      "fzf#run",
+      {
+        'source': self,
+        'sink': sink.lit,
+        'options': '--with-nth=3.. --delimiter="\\:" --preview="bat --color=always --style=numbers --line-range={2}: {1}"'
+      }
+    )
+  end
+end
+
 module RubyWrapperUtil
   def quote(s) = s.single_quote? ? "'#{s}'" : "\"#{s}\""
 
