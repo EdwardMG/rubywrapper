@@ -13,7 +13,7 @@ class String
   end
 
   def single_quote? = !!@sq
-  def lit = RubyWrapperUtil::Literal.new(self)
+  def lit           = RubyWrapperUtil::Literal.new(self)
 end
 
 class Array
@@ -45,34 +45,26 @@ class Array
 end
 
 module RubyWrapperUtil
-  def quote(s) = s.single_quote? ? "'#{s}'" : "\"#{s}\""
-
   class Literal
     attr_accessor :val
     def initialize(val) = @val = val
-
-    def inspect = "--LITERAL--#{val}--LITERAL--"
+    def inspect         = "--LITERAL--#{val}--LITERAL--"
   end
 
-  def lit(s) = Literal.new(s)
+  def quote(s) = s.single_quote? ? "'#{s}'" : "\"#{s}\""
+  def lit(s)   = Literal.new(s)
 
   def recur_to_vim v, count=0
     raise if count > 1000
     if v.is_a? Hash
       count+=1
       v.transform_values {|v| recur_to_vim v, count }
-    elsif v.is_a? TrueClass
-      "--LITERAL_TRUE--"
-    elsif v.is_a? FalseClass
-      "--LITERAL_FALSE--"
-    elsif v.is_a? NilClass
-      "--LITERAL_NULL--"
-    elsif v.is_a? Array
-      v.map {|e| recur_to_vim e, count}
-    elsif v.is_a? Literal
-      v.inspect
-    else
-      v
+    elsif v.is_a? TrueClass  ; "--LITERAL_TRUE--"
+    elsif v.is_a? FalseClass ; "--LITERAL_FALSE--"
+    elsif v.is_a? NilClass   ; "--LITERAL_NULL--"
+    elsif v.is_a? Array      ; v.map {|e| recur_to_vim e, count}
+    elsif v.is_a? Literal    ; v.inspect
+    else                     ; v
     end
   end
 
@@ -81,9 +73,7 @@ module RubyWrapperUtil
   # flexibility with Literal, which allows a ruby string in the shape of a vim
   # lambda to be allowed through. but that likely will never be useful
   def to_vim v
-    if v.is_a? String
-      quote v
-    elsif v.is_a? Hash
+    if v.is_a? Hash
       v = recur_to_vim v
       v.to_json
         .gsub(/"--LITERAL_TRUE--"/, " v:true")
@@ -91,18 +81,13 @@ module RubyWrapperUtil
         .gsub(/"--LITERAL_NULL--"/, " v:null")
         .gsub(/"--LITERAL--/, "")
         .gsub(/--LITERAL--"/, "")
-    elsif v.is_a? TrueClass
-      "v:true"
-    elsif v.is_a? FalseClass
-      "v:false"
-    elsif v.is_a? NilClass
-      "v:null"
-    elsif v.is_a? Array
-      v.to_s
-    elsif v.is_a? Literal
-      v.val
-    else
-      v
+    elsif v.is_a? String     ; quote v
+    elsif v.is_a? TrueClass  ; "v:true"
+    elsif v.is_a? FalseClass ; "v:false"
+    elsif v.is_a? NilClass   ; "v:null"
+    elsif v.is_a? Array      ; v.to_s
+    elsif v.is_a? Literal    ; v.val
+    else                     ; v
     end
   end
 end
@@ -128,13 +113,9 @@ module Var
   include RubyWrapperUtil
   extend RubyWrapperUtil
 
-  def self.method_missing(val, *args, &block)
-    if val[-1] == "="
-      Vim.command "let #{val}#{to_vim args.first}"
-    else
-      Vim.evaluate "#{val}"
-    end
-  end
+  def self.method_missing(val, *args, &block) =
+    val[-1] == "=" ? Vim.command("let #{val}#{to_vim args.first}")
+                   : Vim.evaluate("#{val}")
 
   def self.[](val) = Vim.evaluate "#{val}"
   def self.[]=(val, o)
@@ -146,13 +127,9 @@ module Global
   include RubyWrapperUtil
   extend RubyWrapperUtil
 
-  def self.method_missing(val, *args, &block)
-    if val[-1] == "="
-      Vim.command "let g:#{val}#{to_vim args.first}"
-    else
-      Vim.evaluate "g:#{val}"
-    end
-  end
+  def self.method_missing(val, *args, &block) =
+    val[-1] == "=" ? Vim.command("let g:#{val}#{to_vim args.first}")
+                   : Vim.evaluate("g:#{val}")
 
   def self.[](val) = Vim.evaluate "g:#{val}"
   def self.[]=(val, o)
@@ -281,9 +258,9 @@ class VisualSelection < Selection
     @r = Position.new *Ev.getpos("'>")
     @type =
       case Ev.visualmode
-      when 'v'; 'char'
-      when 'V'; 'line'
-      when ''; 'block'
+      when 'v'  ; 'char'
+      when 'V'  ; 'line'
+      when '' ; 'block'
       end
   end
 end
@@ -292,5 +269,3 @@ endfu
 
 call s:setup()
 
-" vno ,t :ruby VisualSelection.new.replace do; _1.split(' ').inspect ; end<CR>
-" nno ,t :<C-u>let &opfunc='{ t -> rubyeval("MotionSelection.new(Var[''t'']).replace { _1.split('' '').inspect }") }'<CR>g@
