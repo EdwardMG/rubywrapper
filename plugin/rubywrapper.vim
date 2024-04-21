@@ -264,6 +264,38 @@ class VisualSelection < Selection
       end
   end
 end
+
+module TextDebug
+  @@msgs = []
+
+  def self.clear = @@msgs = []
+  def self.<<(msg)
+    @@msgs << msg
+    puts @@msgs
+  end
+
+  def self.puts msg
+    msgs = []
+    if !msg.is_a? Array
+      msgs = [msg]
+    else
+      msgs = msg
+    end
+    msgs.map!(&:to_s)
+    Ev.popup_close( $text_debug ) if $text_debug
+    $text_debug = Ev.popup_create(
+      msgs.last(20),
+      {
+        title: '',
+        padding: [1,1,1,1],
+        line: 1,
+        col: 1,
+        pos: 'topleft',
+        scrollbar: 1
+      }
+    )
+  end
+end
 EOF
 endfu
 
