@@ -296,6 +296,24 @@ module TextDebug
     )
   end
 end
+
+class EasyStorage
+  require 'json'
+  attr_accessor :p, :d, :loader
+  def initialize p, loader=nil
+    @p      = p
+    @loader = loader || ->(l) { OpenStruct.new(JSON.parse(l)) }
+    @d      = load
+  end
+
+  def load
+    @d = File.exist?(p) ? File.readlines(p).map {|l| @loader[l] } : []
+  end
+
+  def save
+    File.write(p, d.map {|s| s.to_h.to_json }.join("\n"))
+  end
+end
 EOF
 endfu
 
