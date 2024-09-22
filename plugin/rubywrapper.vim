@@ -297,6 +297,20 @@ module TextDebug
   end
 end
 
+module SimpleNotify
+  def self.clear
+    Ev.popup_close( $simple_notify ) if $simple_notify
+  end
+
+  def self.puts msg
+    Ev.popup_close( $simple_notify ) if $simple_notify
+    $simple_notify = Ev.popup_create(
+      msg,
+      {title: '', padding: [1,1,1,1], pos: 'center' }
+    )
+  end
+end
+
 class EasyStorage
   require 'json'
   attr_accessor :p, :d, :loader
