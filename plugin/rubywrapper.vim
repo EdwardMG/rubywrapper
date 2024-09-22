@@ -330,6 +330,44 @@ class EasyStorage
     File.write(p, d.map {|s| s.to_h.to_json }.join("\n"))
   end
 end
+
+class Cycler
+  attr_accessor :els, :action, :cleanup
+  # action is a lamda that takes a single el from els
+  # cleanup is a lamda that runs on breaking cycle loop
+  def initialize els, action, cleanup=->(){}
+    @els     = els
+    @action  = action
+    @cleanup = cleanup
+    @i       = 0
+    @end     = @els.length-1
+  end
+
+  def n
+    @i += 1
+    @i = 0 if @i > @end
+    @action[@els[@i]]
+  end
+
+  def p
+    @i -= 1
+    @i = @end if @i < 0
+    @action[@els[@i]]
+  end
+
+  def cycle
+    loop do
+      c = Ev.getcharstr
+      case c
+      when 'j'; n
+      when 'k'; p
+      else
+        cleanup.call
+        break
+      end
+    end
+  end
+end
 EOF
 endfu
 
