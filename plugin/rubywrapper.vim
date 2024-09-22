@@ -307,7 +307,9 @@ class EasyStorage
   end
 
   def load
-    @d = File.exist?(p) ? File.readlines(p).map {|l| @loader[l] } : []
+    @d = []
+    File.open(p).each_line {|l| @d << @loader[l] } if File.exist?(p)
+    @d
   end
 
   def save
