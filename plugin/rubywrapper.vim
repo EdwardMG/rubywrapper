@@ -312,6 +312,7 @@ module SimpleNotify
 end
 
 class EasyStorage
+  require 'ostruct'
   require 'json'
   attr_accessor :p, :d, :loader
   def initialize p, loader=nil
