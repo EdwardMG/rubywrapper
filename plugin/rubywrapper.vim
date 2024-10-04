@@ -412,11 +412,7 @@ end
 
 class Array
   def counter
-    num = 0
-    map! {|s|
-      num += 1
-      s.gsub /xx/, num.to_s.rjust(3, '0')
-    }
+    map!.with_index(1) {|s, num| s.gsub /xx/, num.to_s.rjust(3, '0') }
   end
 end
 EOF
