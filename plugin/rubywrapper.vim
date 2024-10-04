@@ -386,6 +386,22 @@ module RubyEval
     Vim.command "#{s}"
   end
 end
+
+class String
+  def sm
+    tap {|s| s.gsub! /def /, 'def self.' if start_with? /\s*def (?!self)/ }
+  end
+end
+
+class Array
+  def counter
+    num = 0
+    map! {|s|
+      num += 1
+      s.gsub /xx/, num.to_s.rjust(3, '0')
+    }
+  end
+end
 EOF
 endfu
 
