@@ -412,7 +412,11 @@ end
 
 class Array
   def counter
-    map!.with_index(1) {|s, num| s.gsub /xx/, num.to_s.rjust(3, '0') }
+    i = 0
+    each {|s| 
+      i += 1 if s.match /xx/
+      s.gsub! /xx/, i.to_s.rjust(3, '0') 
+    }
   end
 end
 EOF
