@@ -211,6 +211,8 @@ class Selection
     end
   end
 
+  # BUG: works badly with multibyte characters.
+  # the old hacky "qy would help at least with visual selection case
   def inner
     if l.lnum == r.lnum
       [ Ev.getline(l.lnum)[(l.cidx)..(r.cidx)] ]
@@ -369,8 +371,28 @@ class Cycler
     end
   end
 end
+
+module RubyEval
+  def self.pipe_to_ruby_range s, e, cmd
+    ls = File.readlines(Vim::Buffer.current.name, chomp: true)[s-1..e-1]
+    Vim.command "#{s},#{e}d"
+    Ev.append(s-1, eval("ls.#{cmd}"))
+  end
+
+  def self.pipe_to_ruby s, e, cmd
+    ls = File.readlines(Vim::Buffer.current.name, chomp: true)[s-1..e-1]
+    Vim.command "#{s},#{e}d"
+    Ev.append(s-1, ls.map! {|l| eval("l.#{cmd}") })
+    Vim.command "#{s}"
+  end
+end
 EOF
 endfu
 
 call s:setup()
 
+command! -range -nargs=1 PipeToRubyRange ruby RubyEval.pipe_to_ruby_range(<line1>, <line2>, <q-args>)
+command! -range -nargs=1 PipeToRuby ruby RubyEval.pipe_to_ruby(<line1>, <line2>, <q-args>)
+
+cabbrev pr PipeToRubyRange
+cabbrev p PipeToRuby
