@@ -376,16 +376,31 @@ end
 
 module RubyEval
   def self.pipe_to_ruby_range s, e, cmd
-    ls = File.readlines(Vim::Buffer.current.name, chomp: true)[s-1..e-1]
+    # ls = File.readlines(Vim::Buffer.current.name, chomp: true)[s-1..e-1]
+    ls = Ev.getline(s, e)
     Vim.command "#{s},#{e}d"
     Ev.append(s-1, eval("ls.#{cmd}"))
   end
 
   def self.pipe_to_ruby s, e, cmd
-    ls = File.readlines(Vim::Buffer.current.name, chomp: true)[s-1..e-1]
-    Vim.command "#{s},#{e}d"
-    Ev.append(s-1, ls.map! {|l| eval("l.#{cmd}") })
-    Vim.command "#{s}"
+    (s..e).each do |lnum|
+      l = Vim::Buffer.current[lnum]
+      Vim::Buffer.current[lnum] = eval("l.#{cmd}")
+    end
+    # ls = File.readlines(Vim::Buffer.current.name, chomp: true)[s-1..e-1]
+    # Vim.command "#{s},#{e}d"
+    # Ev.append(s-1, ls.map! {|l| eval("l.#{cmd}") })
+    # Vim.command "#{s}"
+  end
+
+  def self.pipe_to_ruby_global qargs
+    pattern = Regexp.new(qargs.match(/\/(.*)\//)[1])
+    cmd = qargs.match(/\s(.+$)/)[1]
+    Ev.getline(1, '$').each.with_index(1) do |l, lnum|
+      if l.match? pattern
+        Vim::Buffer.current[lnum] = eval("l.#{cmd}")
+      end
+    end
   end
 end
 
@@ -410,7 +425,9 @@ endfu
 call s:setup()
 
 command! -range -nargs=1 PipeToRubyRange ruby RubyEval.pipe_to_ruby_range(<line1>, <line2>, <q-args>)
+command! -nargs=1 PipeToRubyGlobal ruby RubyEval.pipe_to_ruby_global(<q-args>)
 command! -range -nargs=1 PipeToRuby ruby RubyEval.pipe_to_ruby(<line1>, <line2>, <q-args>)
 
 cabbrev pr PipeToRubyRange
+cabbrev pg PipeToRubyGlobal
 cabbrev p PipeToRuby
