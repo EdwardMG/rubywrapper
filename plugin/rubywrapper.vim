@@ -411,12 +411,24 @@ class String
 end
 
 class Array
-  def counter
+  def counter pat=/xx/
+    pat = Regexp.new(pat) # in case we just pass a string
     i = 0
     each {|s| 
-      if s.match /xx/
+      if s.match pat
         i += 1
-        s.gsub! /xx/, i.to_s.rjust(3, '0') 
+        s.gsub! pat, i.to_s.rjust(3, '0') 
+      end
+    }
+  end
+
+  def append_counter pat='log'
+    pattern = Regexp.new(pat)
+    i = 0
+    each {|s| 
+      if s.match pattern
+        i += 1
+        s.gsub! pattern, pat+i.to_s.rjust(3, '0') 
       end
     }
   end
