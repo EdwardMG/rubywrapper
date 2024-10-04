@@ -414,8 +414,10 @@ class Array
   def counter
     i = 0
     each {|s| 
-      i += 1 if s.match /xx/
-      s.gsub! /xx/, i.to_s.rjust(3, '0') 
+      if s.match /xx/
+        i += 1
+        s.gsub! /xx/, i.to_s.rjust(3, '0') 
+      end
     }
   end
 end
