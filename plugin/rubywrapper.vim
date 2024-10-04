@@ -100,6 +100,7 @@ module Ev
     raise "called method_missing with to_vim" if method == :to_vim
     Vim.evaluate "#{method}(#{args.map {|a| to_vim a }.join(', ')})"
   end
+  def self.[](expr) = Vim.evaluate expr
 end
 
 module Ex
@@ -107,6 +108,7 @@ module Ex
   extend RubyWrapperUtil
 
   def self.method_missing(method, *args, &block) = Vim.command "#{method} #{args.join(' ')}"
+  def self.[](command) = Vim.command command
 end
 
 module Var
