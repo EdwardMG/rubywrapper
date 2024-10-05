@@ -395,7 +395,7 @@ module RubyEval
 
   def self.pipe_to_ruby_global qargs
     pattern = Regexp.new(qargs.match(/\/(.*)\//)[1])
-    cmd = qargs.match(/\s(.+$)/)[1]
+    cmd = qargs.match(/\/.*\/\s(.+$)/)[1]
     Ev.getline(1, '$').each.with_index(1) do |l, lnum|
       if l.match? pattern
         Vim::Buffer.current[lnum] = eval("l.#{cmd}")
