@@ -294,7 +294,7 @@ module TextDebug
         padding: [1,1,1,1],
         line: 1,
         col: 1,
-        pos: 'topleft',
+        pos: 'topright',
         scrollbar: 1
       }
     )
@@ -337,27 +337,28 @@ class EasyStorage
 end
 
 class Cycler
-  attr_accessor :els, :action, :cleanup
+  attr_accessor :els, :action, :cleanup, :alt_actions, :i, :out, :end
   # action is a lamda that takes a single el from els
   # cleanup is a lamda that runs on breaking cycle loop
-  def initialize els, action, cleanup=->(){}
+  def initialize els, action, cleanup=->(){}, alt_actions={}
     @els     = els
     @action  = action
     @cleanup = cleanup
     @i       = 0
     @end     = @els.length-1
+    @alt_actions = alt_actions
   end
 
   def n
     @i += 1
     @i = 0 if @i > @end
-    @action[@els[@i]]
+    @out = @action[@els[@i]]
   end
 
   def p
     @i -= 1
     @i = @end if @i < 0
-    @action[@els[@i]]
+    @out = @action[@els[@i]]
   end
 
   def cycle
@@ -367,9 +368,36 @@ class Cycler
       when 'j'; n
       when 'k'; p
       else
-        cleanup.call
-        break
+        if alt_actions[c]
+          alt_actions[c].call(self)
+        else
+          cleanup.call @out
+          break
+        end
       end
+    end
+  end
+end
+
+class Mapping
+  attr_accessor :original_mapping, :mode, :lhs
+
+  def initialize mode, lhs
+    @mode             = mode
+    @lhs              = lhs
+    # must use maplist and filter here because maparg prioritizes <buffer> local mappings
+    @original_mapping = Ev.maplist.select { _1['mode'] == mode && _1['lhs'] == lhs && _1["buffer"] == 0 }.first
+  end
+
+  def set_rhs rhs, flags=''
+    Ex["#{mode}no #{flags} #{lhs} #{rhs}"]
+  end
+
+  def restore
+    if original_mapping
+      Ev.mapset(original_mapping)
+    else
+      Ex["#{mode}unmap #{lhs}"]
     end
   end
 end
@@ -409,10 +437,10 @@ class Array
   def counter pat=/xx/
     pat = Regexp.new(pat) # in case we just pass a string
     i = 0
-    each {|s| 
+    each {|s|
       if s.match pat
         i += 1
-        s.gsub! pat, i.to_s.rjust(3, '0') 
+        s.gsub! pat, i.to_s.rjust(3, '0')
       end
     }
   end
@@ -420,10 +448,10 @@ class Array
   def append_counter pat='log'
     pattern = Regexp.new(pat)
     i = 0
-    each {|s| 
+    each {|s|
       if s.match pattern
         i += 1
-        s.gsub! pattern, pat+i.to_s.rjust(3, '0') 
+        s.gsub! pattern, pat+i.to_s.rjust(3, '0')
       end
     }
   end
