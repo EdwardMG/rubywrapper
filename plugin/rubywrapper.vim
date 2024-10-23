@@ -12,6 +12,11 @@ class String
     self
   end
 
+  # useful when passing stuff to U
+  def uq
+    "$'"+self+"'"
+  end
+
   def single_quote? = !!@sq
   def lit           = RubyWrapperUtil::Literal.new(self)
 end
@@ -41,6 +46,11 @@ class Array
         'options': '--with-nth=3.. --delimiter="\\:" --preview="bat --color=always --style=numbers --line-range={2}: {1}"'
       }
     )
+  end
+
+  def dump
+    Ev.append('.', self.map { _1.gsub(/./,'') })
+    Ex.redraw!
   end
 end
 
@@ -500,3 +510,14 @@ command! -range -nargs=1 PipeToRuby       ruby RubyEval.pipe_to_ruby(<line1>, <l
 " cabbrev pr PipeToRubyRange
 " cabbrev pg PipeToRubyGlobal
 " cabbrev p PipeToRuby
+
+" Ev.append('.', U.ps.select {_1.include? 'vim'})
+" Ev.append'.', U.ri('String.match')
+" Ev.append'.', U.rg('class ')
+" U.ri('String.upcase').dump
+" U.man('sed').dump
+" U.sed('-nE', '/pipe/p'.uq, Ev.expand('%')).dump
+" U.grep('pipe', '. -R').dump
+" U.rg('def ', Ev.expand('%'), "--type ruby").dump
+" U['rg def | grep test'].dump
+
