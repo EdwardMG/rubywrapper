@@ -113,6 +113,15 @@ module Rex
   def self.[](command) = Vim.command command
 end
 
+# convenience for when you only have one addr
+module Rex1
+  include RubyWrapperUtil
+  extend RubyWrapperUtil
+
+  def self.method_missing(method, *args, &block) = Vim.command "#{args[0]}#{method} #{args[1..].join(' ')}"
+  def self.[](command) = Vim.command command
+end
+
 module Ex
   include RubyWrapperUtil
   extend RubyWrapperUtil
