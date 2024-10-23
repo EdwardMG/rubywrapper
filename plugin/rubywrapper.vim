@@ -103,12 +103,30 @@ module Ev
   def self.[](expr) = Vim.evaluate expr
 end
 
+module Rex
+  include RubyWrapperUtil
+  extend RubyWrapperUtil
+
+  # first two args are presumed to be addr1 and addr2. if arguments are needed
+  # to the command itself, add2 should be passed as nil
+  def self.method_missing(method, *args, &block) = Vim.command "#{args[0..1].compact.join(',')}#{method} #{args[2..].join(' ')}"
+  def self.[](command) = Vim.command command
+end
+
 module Ex
   include RubyWrapperUtil
   extend RubyWrapperUtil
 
   def self.method_missing(method, *args, &block) = Vim.command "#{method} #{args.join(' ')}"
   def self.[](command) = Vim.command command
+end
+
+module N
+  include RubyWrapperUtil
+  extend RubyWrapperUtil
+
+  def self.method_missing(method, count="", &block) = Vim.command "normal! #{count}#{method}"
+  def self.[](command) = Vim.command "normal! #{command}"
 end
 
 module Var
@@ -465,6 +483,6 @@ command! -range -nargs=1 PipeToRubyRange  ruby RubyEval.pipe_to_ruby_range(<line
 command!        -nargs=1 PipeToRubyGlobal ruby RubyEval.pipe_to_ruby_global(<q-args>)
 command! -range -nargs=1 PipeToRuby       ruby RubyEval.pipe_to_ruby(<line1>, <line2>, <q-args>)
 
-cabbrev pr PipeToRubyRange
-cabbrev pg PipeToRubyGlobal
-cabbrev p PipeToRuby
+" cabbrev pr PipeToRubyRange
+" cabbrev pg PipeToRubyGlobal
+" cabbrev p PipeToRuby
