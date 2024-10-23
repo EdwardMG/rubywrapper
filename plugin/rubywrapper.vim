@@ -507,6 +507,9 @@ command! -range -nargs=1 PipeToRubyRange  ruby RubyEval.pipe_to_ruby_range(<line
 command!        -nargs=1 PipeToRubyGlobal ruby RubyEval.pipe_to_ruby_global(<q-args>)
 command! -range -nargs=1 PipeToRuby       ruby RubyEval.pipe_to_ruby(<line1>, <line2>, <q-args>)
 
+nno ,i :ruby U.ri(Ev.expand("<cword>")).dump<CR>
+vno ,i :ruby U.ri(VisualSelection.new.inner).dump<CR>
+
 " cabbrev pr PipeToRubyRange
 " cabbrev pg PipeToRubyGlobal
 " cabbrev p PipeToRuby
