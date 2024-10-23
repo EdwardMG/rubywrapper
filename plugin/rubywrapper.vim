@@ -92,6 +92,11 @@ module RubyWrapperUtil
   end
 end
 
+module U
+  def self.method_missing(method, *args, &block) = `#{method} #{args.join(' ')}`.split("\n")
+  def self.[](expr) = `#{expr}`.split("\n")
+end
+
 module Ev
   include RubyWrapperUtil
   extend RubyWrapperUtil
