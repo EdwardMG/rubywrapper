@@ -498,6 +498,28 @@ class Array
     }
   end
 end
+
+class Slime
+  attr_accessor :term_bufid
+
+  def initialize
+    @term_bufid = find_term_window_in_tab&.fetch "bufnr"
+  end
+
+  def active?
+    !!@term_bufid
+  end
+
+  def send lines
+    Ev.term_sendkeys(term_bufid, lines.join("\r")+"\r")
+  end
+
+  def find_term_window_in_tab
+    Ev.gettabinfo(Ev.tabpagenr).first['windows']
+      .flat_map { Ev.getwininfo(_1) }
+      .find { _1["terminal"] == 1 }
+  end
+end
 EOF
 endfu
 
