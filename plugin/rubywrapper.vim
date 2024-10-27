@@ -288,6 +288,8 @@ class Selection
   end
   def outer = Ev.getline(l.lnum, r.lnum)
   def lines = Ev.getline(l.lnum, r.lnum)
+
+  def lnums = l.lnum..r.lnum
 end
 
 class MotionSelection < Selection
