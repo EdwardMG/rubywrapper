@@ -513,7 +513,7 @@ class Slime
   end
 
   def send lines
-    Ev.term_sendkeys(term_bufid, lines.join("\r")+"\r")
+    Ev.term_sendkeys(term_bufid, lines.join("\r").gsub('"', '\"')+"\r")
   end
 
   def find_term_window_in_tab
